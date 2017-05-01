@@ -209,9 +209,13 @@ func rec(p sf.Vector2D, r float64) math.Rect {
 
 func (w *Gui) DrawEntity(e *sf.Entity, canvas gxui.Canvas) {
 	//fmt.Printf("DrawEntity %v\n", e.GetPos())
-	b := b4
 	canvas.DrawRoundedRect(rec(e.GetPos(), e.GetBoundingRadius()), 50, 50, 50, 50,
-		gxui.TransparentPen, b)
+		gxui.TransparentPen, b4)
+
+	if e.IsTargetOn() {
+		canvas.DrawRoundedRect(rec(e.GetTarget(), e.GetBoundingRadius()), 50, 50, 50, 50,
+			gxui.TransparentPen, b12)
+	}
 }
 
 func (w *Gui) DrawEntities(canvas gxui.Canvas) {

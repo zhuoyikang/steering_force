@@ -2,7 +2,7 @@ package steering_force
 
 var (
 	DR    = float64(20)
-	SPEED = float64(6)
+	SPEED = float64(60)
 )
 
 type Entity struct {
@@ -54,8 +54,16 @@ func (e *Entity) GetPos() Vector2D {
 	return e.pos
 }
 
+func (e *Entity) GetTarget() Vector2D {
+	return e.targetPos
+}
+
 func (e *Entity) GetBoundingRadius() float64 {
 	return e.boundingRadius
+}
+
+func (e *Entity) IsTargetOn() bool {
+	return e.targetOn
 }
 
 // 设置目标
