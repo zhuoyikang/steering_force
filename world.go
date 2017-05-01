@@ -52,3 +52,12 @@ func (w *World) AddEntity(e *Entity) {
 func (w *World) AllEntities() []*Entity {
 	return w.entities
 }
+
+func (w *World) PosConflict(pos Vector2D) bool {
+	for _, e := range w.entities {
+		if e.pos.Sub(pos).Length() < (e.boundingRadius + DR) {
+			return true
+		}
+	}
+	return false
+}

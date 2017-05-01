@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	sf "github.com/indie21/steering_force"
@@ -53,6 +54,9 @@ type Gui struct {
 	charLab  gxui.Label
 	linerLab gxui.LinearLayout
 
+	currentMouse  sf.Vector2D
+	currentEntity *sf.Entity
+
 	world *sf.World
 }
 
@@ -101,6 +105,8 @@ func (w *Gui) appMain(driver gxui.Driver) {
 
 	win := w.GetWindow()
 	win.OnMouseUp(w.onClick)
+	win.OnMouseMove(w.onMove)
+	win.OnKeyDown(w.onKeyDown)
 
 	go w.run()
 	win.OnClose(w.GetDriver().Terminate)
@@ -137,6 +143,47 @@ func (w *Gui) onClick(me gxui.MouseEvent) {
 	fmt.Printf("click %v \n", me.Point)
 }
 
+func (w *Gui) onMove(me gxui.MouseEvent) {
+	w.currentMouse = sf.Vector2D{float64(me.Point.X), fy(float64(me.Point.Y))}
+}
+
+func (w *Gui) onKeyDown(ev gxui.KeyboardEvent) {
+	switch ev.Key {
+	case gxui.KeyEnter:
+		fmt.Printf("enter \n")
+	case gxui.KeyE:
+		if w.world.PosConflict(w.currentMouse) {
+			return
+		}
+		fmt.Printf("e \n")
+
+		entity := sf.NewEntity()
+		entity.SetPos(w.currentMouse)
+		w.world.AddEntity(entity)
+		w.currentEntity = entity
+
+	case gxui.KeyF:
+		if w.world.PosConflict(w.currentMouse) {
+			return
+		}
+
+		if w.currentEntity != nil {
+			w.currentEntity.SetTarget(w.currentMouse)
+			w.currentEntity = nil
+		} else {
+			entity := sf.NewEntity()
+			entity.SetPos(w.currentMouse)
+			w.world.AddEntity(entity)
+			w.currentEntity = entity
+		}
+
+		fmt.Printf("f \n")
+
+	case gxui.KeyQ:
+		os.Exit(0)
+	}
+}
+
 func (w *Gui) DrawUI() {
 	canvas := w.drv.CreateCanvas(w.size)
 
@@ -161,7 +208,7 @@ func rec(p sf.Vector2D, r float64) math.Rect {
 }
 
 func (w *Gui) DrawEntity(e *sf.Entity, canvas gxui.Canvas) {
-	fmt.Printf("DrawEntity %v\n", e.GetPos())
+	//fmt.Printf("DrawEntity %v\n", e.GetPos())
 	b := b4
 	canvas.DrawRoundedRect(rec(e.GetPos(), e.GetBoundingRadius()), 50, 50, 50, 50,
 		gxui.TransparentPen, b)

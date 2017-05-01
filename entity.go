@@ -1,5 +1,10 @@
 package steering_force
 
+var (
+	DR    = float64(20)
+	SPEED = float64(6)
+)
+
 type Entity struct {
 	pos            Vector2D
 	boundingRadius float64
@@ -34,9 +39,9 @@ func NewEntity() *Entity {
 		pos:            Vector2D{0, 0},
 		targetOn:       false,
 		targetPos:      Vector2D{0, 0},
-		MaxSpeed:       10,
+		MaxSpeed:       SPEED,
 		Mass:           1,
-		boundingRadius: 10,
+		boundingRadius: DR,
 	}
 	return e
 }
