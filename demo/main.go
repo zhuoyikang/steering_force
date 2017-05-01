@@ -16,8 +16,8 @@ func runWorld() {
 }
 
 func runGui() {
-	gui := NewGui(1, 1000, 1000)
-
+	gui := NewGui(1, 1000, 1000, time.Second/2)
+	gui.Run()
 }
 
 func main() {
