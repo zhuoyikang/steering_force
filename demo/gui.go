@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	sf "github.com/indie21/steering_force"
+
 	"github.com/google/gxui"
 	"github.com/google/gxui/drivers/gl"
 	"github.com/google/gxui/math"
@@ -28,7 +30,7 @@ var (
 )
 
 const (
-	RATE = 10
+	RATE = 1
 )
 
 var (
@@ -50,6 +52,8 @@ type Gui struct {
 	posLab   gxui.Label
 	charLab  gxui.Label
 	linerLab gxui.LinearLayout
+
+	world *sf.World
 }
 
 func fy(y float64) float64 {
@@ -64,15 +68,16 @@ func fp(pv []gxui.PolygonVertex) []gxui.PolygonVertex {
 	return pv
 }
 
-// 因为浮点在绘图库中强制变成整数会导致精度丢失，这里将坐标放大，通过缩放gui的方式减小误差。
+// // 因为浮点在绘图库中强制变成整数会导致精度丢失，这里将坐标放大，通过缩放gui的方式减小误差。
 func ssr(i float64) int {
 	return int(i * RATE)
 }
 
-func NewGui(scale, width, height float64, tick time.Duration) *Gui {
+func NewGui(world *sf.World, scale, width, height float64, tick time.Duration) *Gui {
 	return &Gui{
 		tick:  tick,
 		Scale: scale,
+		world: world,
 		size: math.Size{
 			W: ssr(width),
 			H: ssr(height),
@@ -88,7 +93,6 @@ func (w *Gui) run() {
 }
 
 func (w *Gui) Run() {
-	go w.run()
 	gl.StartDriver(w.appMain)
 }
 
@@ -98,6 +102,7 @@ func (w *Gui) appMain(driver gxui.Driver) {
 	win := w.GetWindow()
 	win.OnMouseUp(w.onClick)
 
+	go w.run()
 	win.OnClose(w.GetDriver().Terminate)
 }
 
@@ -109,6 +114,7 @@ func (w *Gui) WinMain(driver gxui.Driver) {
 
 	w.drv = driver
 	w.dy = w.theme.CreateImage()
+	w.win.AddChild(w.dy)
 }
 
 func (w *Gui) GetWindow() gxui.Window {
@@ -132,11 +138,39 @@ func (w *Gui) onClick(me gxui.MouseEvent) {
 }
 
 func (w *Gui) DrawUI() {
-	fmt.Printf("draw \n")
 	canvas := w.drv.CreateCanvas(w.size)
+
 	// draw
+	w.DrawEntities(canvas)
+
 	canvas.Complete()
 	w.dy.SetCanvas(canvas)
+}
+
+func rec(p sf.Vector2D, r float64) math.Rect {
+	return math.Rect{
+		Min: math.Point{
+			X: ssr(p.X - r),
+			Y: ssr(fy(p.Y) - r),
+		},
+		Max: math.Point{
+			X: ssr(p.X + r),
+			Y: ssr(fy(p.Y) + r),
+		},
+	}
+}
+
+func (w *Gui) DrawEntity(e *sf.Entity, canvas gxui.Canvas) {
+	fmt.Printf("DrawEntity %v\n", e.GetPos())
+	b := b4
+	canvas.DrawRoundedRect(rec(e.GetPos(), e.GetBoundingRadius()), 50, 50, 50, 50,
+		gxui.TransparentPen, b)
+}
+
+func (w *Gui) DrawEntities(canvas gxui.Canvas) {
+	for _, e := range w.world.AllEntities() {
+		w.DrawEntity(e, canvas)
+	}
 }
 
 func (w *Gui) Fy(y float64) float64 {

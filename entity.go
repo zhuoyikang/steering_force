@@ -36,13 +36,21 @@ func NewEntity() *Entity {
 		targetPos:      Vector2D{0, 0},
 		MaxSpeed:       10,
 		Mass:           1,
-		boundingRadius: 2,
+		boundingRadius: 10,
 	}
 	return e
 }
 
 func (e *Entity) SetPos(pos Vector2D) {
 	e.pos = pos
+}
+
+func (e *Entity) GetPos() Vector2D {
+	return e.pos
+}
+
+func (e *Entity) GetBoundingRadius() float64 {
+	return e.boundingRadius
 }
 
 // 设置目标
@@ -77,7 +85,7 @@ func (e *Entity) Update(timeDelta float64) {
 		Truncate(e.MaxSpeed)
 
 	e.pos = e.pos.Add(e.velocity.MulScalar(timeDelta))
-	//fmt.Printf("pos %v %v %v\n", e.pos, e.velocity, sf)
+	// fmt.Printf("pos %v %v %v\n", e.pos, e.velocity, sf)
 
 	if e.velocity.LengthSquared() > 0.0001 {
 		e.heading = e.velocity.Normalize()
