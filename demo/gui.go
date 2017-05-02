@@ -151,7 +151,7 @@ func (w *Gui) onKeyDown(ev gxui.KeyboardEvent) {
 	switch ev.Key {
 	case gxui.KeyEnter:
 	case gxui.KeyE:
-		if w.world.PosConflict(w.currentMouse) {
+		if w.world.PosConflict(w.currentMouse) != nil {
 			return
 		}
 
@@ -161,7 +161,7 @@ func (w *Gui) onKeyDown(ev gxui.KeyboardEvent) {
 		w.currentEntity = entity
 
 	case gxui.KeyF:
-		if w.world.PosConflict(w.currentMouse) {
+		if w.world.PosConflict(w.currentMouse) != nil {
 			return
 		}
 
@@ -174,6 +174,12 @@ func (w *Gui) onKeyDown(ev gxui.KeyboardEvent) {
 			w.world.AddEntity(entity)
 			w.currentEntity = entity
 		}
+	case gxui.KeyD:
+		entity := w.world.PosConflict(w.currentMouse)
+		if entity != nil {
+			entity.SetDelete()
+		}
+
 	case gxui.KeyQ:
 		os.Exit(0)
 	}

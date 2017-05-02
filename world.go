@@ -51,14 +51,20 @@ func (w *World) AddEntity(e *Entity) {
 }
 
 func (w *World) AllEntities() []*Entity {
-	return w.entities
-}
-
-func (w *World) PosConflict(pos Vector2D) bool {
-	for _, e := range w.entities {
-		if e.pos.Sub(pos).Length() < (e.boundingRadius + DR) {
-			return true
+	list := make([]*Entity, 0)
+	for _, v := range w.entities {
+		if !v.delete {
+			list = append(list, v)
 		}
 	}
-	return false
+	return list
+}
+
+func (w *World) PosConflict(pos Vector2D) *Entity {
+	for _, e := range w.entities {
+		if e.pos.Sub(pos).Length() < (e.boundingRadius + DR) {
+			return e
+		}
+	}
+	return nil
 }

@@ -40,11 +40,14 @@ type Entity struct {
 
 	dDBoxLength float64
 
+	delete bool
+
 	world *World
 }
 
 func NewEntity() *Entity {
 	e := &Entity{
+		delete:         false,
 		velocity:       Vector2D{0, 0},
 		pos:            Vector2D{0, 0},
 		targetOn:       false,
@@ -54,6 +57,10 @@ func NewEntity() *Entity {
 		boundingRadius: DR,
 	}
 	return e
+}
+
+func (e *Entity) SetDelete() {
+	e.delete = true
 }
 
 func (e *Entity) SetPos(pos Vector2D) {
