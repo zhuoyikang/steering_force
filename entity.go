@@ -2,14 +2,13 @@ package steering_force
 
 import (
 	"fmt"
-	"math"
 	"time"
 )
 
 var (
 	DR                    = float64(20)
 	SPEED                 = float64(60)
-	MINDETECTIONBOXLENGTH = float64(30)
+	MINDETECTIONBOXLENGTH = float64(20)
 )
 
 type Entity struct {
@@ -98,6 +97,24 @@ func (e *Entity) ClearTarget() {
 	fmt.Printf("ClearTarget now %v\n", time.Now().Unix())
 }
 
+func (e *Entity) EnforceNonPenetrationConstraint() {
+	for _, e2 := range e.world.AllEntities() {
+		if e == e2 {
+			continue
+		}
+
+		toEntity := e.pos.Sub(e2.pos)
+		distFromEachOther := toEntity.Length()
+
+		amountOfOverLap := (e.boundingRadius + e2.boundingRadius) - distFromEachOther
+		if amountOfOverLap > 0 {
+			pos2 := e.pos.Add(toEntity.DivScalar(distFromEachOther).AddScalar(amountOfOverLap))
+			fmt.Printf("set pos %v %v %v\n", e.pos, pos2, amountOfOverLap)
+			e.SetPos(pos2)
+		}
+	}
+}
+
 func (e *Entity) Update(timeDelta float64) {
 	if !e.targetOn {
 		return
@@ -130,6 +147,8 @@ func (e *Entity) Update(timeDelta float64) {
 	if e.targetPos.Sub(e.pos).LengthSquared() < 1 {
 		e.ClearTarget()
 	}
+
+	e.EnforceNonPenetrationConstraint()
 }
 
 // 计算合力
@@ -146,11 +165,11 @@ func (e *Entity) Calculate() (Vector2D, bool) {
 	// 	targetForce.LengthSquared(),
 	// 	obForce.LengthSquared())
 
-	if obForce.LengthSquared() > 1e-7 {
-		val := targetForce.Normalize().Dot(obForce.Normalize())
-		val1 := math.Acos(val)
-		fmt.Printf("angle %v limit %v\n", val1, (0.95 * math.Pi))
-	}
+	// if obForce.LengthSquared() > 1e-7 {
+	// 	val := targetForce.Normalize().Dot(obForce.Normalize())
+	// 	val1 := math.Acos(val)
+	// 	fmt.Printf("angle %v limit %v\n", val1, (0.95 * math.Pi))
+	// }
 
 	force = targetForce.Add(obForce)
 	return force.Sub(e.velocity), true
@@ -181,15 +200,6 @@ func (e *Entity) ObstacleAvoidance() Vector2D {
 		if localPos.X <= 0 {
 			continue
 		}
-
-		// fmt.Printf("localPos %v %v\n", localPos.X, localPos)
-
-		// expandedRadius := e.boundingRadius + e2.boundingRadius
-		// if math.Abs(localPos.Y) >= expandedRadius {
-		// 	 continue
-		// }
-
-		// fmt.Printf("localPos %v\n", localPos.X)
 
 		sf := Vector2D{0, 0}
 		multiplier := 1.0 + (e.dDBoxLength-localPos.X)/e.dDBoxLength

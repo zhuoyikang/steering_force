@@ -62,7 +62,7 @@ func (w *World) AllEntities() []*Entity {
 
 func (w *World) PosConflict(pos Vector2D) *Entity {
 	for _, e := range w.entities {
-		if e.pos.Sub(pos).Length() < (e.boundingRadius + DR) {
+		if e.delete == false && e.pos.Sub(pos).Length() < (e.boundingRadius+DR) {
 			return e
 		}
 	}
