@@ -7,12 +7,12 @@ import (
 )
 
 func runWorld() *sf.World {
-	world := sf.NewWorld(100, 100, time.Second/60)
+	world := sf.NewWorld(100, 100, time.Second/30)
 	world.Run()
 
 	entity := sf.NewEntity()
 	entity.SetPos(sf.Vector2D{250, 250})
-	// entity.SetTarget(sf.Vector2D{500, 500})
+	//entity.SetTarget(sf.Vector2D{500, 500})
 	world.AddEntity(entity)
 	return world
 }

@@ -1,7 +1,5 @@
 package steering_force
 
-import "fmt"
-
 // 将世界坐标转换为局部坐标
 func PointToLocalSpace(point Vector2D, AgentHeading Vector2D,
 	AgentSide Vector2D, AgentPosition Vector2D) Vector2D {
@@ -26,9 +24,7 @@ func VectorToWorldSpace(point Vector2D, AgentHeading Vector2D,
 	matTransform := NewC2DMatrix()
 	//rotate
 	matTransform.Rotate(AgentHeading, AgentSide)
-
-	fmt.Printf("VectorToWorldSpace %v\n", *matTransform.matrix)
-
+	// fmt.Printf("VectorToWorldSpace %v\n", *matTransform.matrix)
 	//now transform the vertices
 	return matTransform.TransformVector2D(point)
 }

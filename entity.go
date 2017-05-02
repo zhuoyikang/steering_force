@@ -3,12 +3,13 @@ package steering_force
 import (
 	"fmt"
 	"math"
+	"time"
 )
 
 var (
 	DR                    = float64(20)
 	SPEED                 = float64(60)
-	MINDETECTIONBOXLENGTH = float64(40)
+	MINDETECTIONBOXLENGTH = float64(30)
 )
 
 type Entity struct {
@@ -94,7 +95,7 @@ func (e *Entity) ClearTarget() {
 	e.targetOn = false
 	e.pos = e.targetPos
 	e.velocity = Vector2D{0, 0}
-	// fmt.Printf("ClearTarget now %v\n", time.Now().Unix())
+	fmt.Printf("ClearTarget now %v\n", time.Now().Unix())
 }
 
 func (e *Entity) Update(timeDelta float64) {
@@ -102,7 +103,11 @@ func (e *Entity) Update(timeDelta float64) {
 		return
 	}
 
-	sf := e.Calculate()
+	sf, canmove := e.Calculate()
+
+	if !canmove {
+		return
+	}
 
 	// 加速度 = 力/质量
 	acceleration := sf.DivScalar(e.Mass)
@@ -122,46 +127,52 @@ func (e *Entity) Update(timeDelta float64) {
 		e.side = e.heading.Perp()
 	}
 
-	if e.targetPos.Sub(e.pos).LengthSquared() < 0.3 {
+	if e.targetPos.Sub(e.pos).LengthSquared() < 1 {
 		e.ClearTarget()
 	}
 }
 
 // 计算合力
-func (e *Entity) Calculate() Vector2D {
+func (e *Entity) Calculate() (Vector2D, bool) {
 	force := Vector2D{0, 0}
+	targetForce := Vector2D{0, 0}
 	if e.targetOn {
-		force = force.Add(e.Seek(e.targetPos))
+		targetForce = e.Seek(e.targetPos)
 	}
 
-	obforce := e.ObstacleAvoidance()
-	fmt.Printf("obforce %v\n", obforce)
+	obForce := e.ObstacleAvoidance()
 
-	force = force.Add(obforce)
+	// fmt.Printf("targetForce length %v obForce  %v\n",
+	// 	targetForce.LengthSquared(),
+	// 	obForce.LengthSquared())
 
-	return force
+	if obForce.LengthSquared() > 1e-7 {
+		val := targetForce.Normalize().Dot(obForce.Normalize())
+		val1 := math.Acos(val)
+		fmt.Printf("angle %v limit %v\n", val1, (0.95 * math.Pi))
+	}
+
+	force = targetForce.Add(obForce)
+	return force.Sub(e.velocity), true
 }
 
 // 靠近
 func (e *Entity) Seek(targetPos Vector2D) Vector2D {
 	diredvelocity := targetPos.Sub(e.pos).Normalize().
 		MulScalar(e.MaxSpeed)
-	result := diredvelocity.Sub(e.velocity)
+	// result := diredvelocity.Sub(e.velocity)
+	result := diredvelocity
 	return result
 }
 
 // 计算Entity之间的阻挡
 func (e *Entity) ObstacleAvoidance() Vector2D {
-	e.dDBoxLength = 2 * MINDETECTIONBOXLENGTH
+	e.dDBoxLength = MINDETECTIONBOXLENGTH
 
-	var closestIntersectingObstacle *Entity
-	distToClosestIP := math.MaxFloat64
-	var localPosOfClosestObstacle Vector2D
 	steeringForce := Vector2D{0, 0}
 
 	for _, e2 := range e.world.AllEntities() {
 		rlen := e2.boundingRadius + MINDETECTIONBOXLENGTH
-		fmt.Printf("e2.pos.Sub(e.pos).LengthSquared() %v %v\n", e2.pos.Sub(e.pos).LengthSquared(), rlen*rlen)
 		if e == e2 || e2.pos.Sub(e.pos).LengthSquared() > rlen*rlen {
 			continue
 		}
@@ -171,45 +182,31 @@ func (e *Entity) ObstacleAvoidance() Vector2D {
 			continue
 		}
 
-		expandedRadius := e.boundingRadius + e2.boundingRadius
-		if math.Abs(localPos.Y) >= expandedRadius {
-			continue
-		}
+		// fmt.Printf("localPos %v %v\n", localPos.X, localPos)
 
-		cX := localPos.X
-		cY := localPos.Y
+		// expandedRadius := e.boundingRadius + e2.boundingRadius
+		// if math.Abs(localPos.Y) >= expandedRadius {
+		// 	 continue
+		// }
 
-		sqrtPart := math.Sqrt(expandedRadius*expandedRadius - cY*cY)
-		ip := cX - sqrtPart
+		// fmt.Printf("localPos %v\n", localPos.X)
 
-		if ip <= 0.0 {
-			ip = cX + sqrtPart
-		}
+		sf := Vector2D{0, 0}
+		multiplier := 1.0 + (e.dDBoxLength-localPos.X)/e.dDBoxLength
+		sf.Y = (e2.boundingRadius - localPos.Y) * multiplier
 
-		if ip < distToClosestIP {
-			distToClosestIP = ip
-			closestIntersectingObstacle = e2
-			localPosOfClosestObstacle = localPos
-		}
+		brakingWeight := 0.2
+		sf.X = (e2.boundingRadius - localPos.X) * brakingWeight
 
-		multiplier := 3.0 + (e.dDBoxLength-localPosOfClosestObstacle.X)/e.dDBoxLength
-
-		steeringForce.Y = (closestIntersectingObstacle.boundingRadius -
-			localPosOfClosestObstacle.Y) * multiplier
-
-		brakingWeight := 0.0
-
-		steeringForce.X = (closestIntersectingObstacle.boundingRadius -
-			localPosOfClosestObstacle.X) *
-			brakingWeight
-
-		fmt.Printf("obforce2 %v\n", steeringForce)
-
-		s1 := VectorToWorldSpace(steeringForce, e.heading, e.side, e.pos)
+		s1 := VectorToWorldSpace(sf, e.heading, e.side, e.pos)
+		//fmt.Printf("sf %v s1 %v\n", sf, s1)
 		steeringForce = steeringForce.Add(s1)
 	}
 
-	fmt.Printf("obforce1 \n")
+	if steeringForce.LengthSquared() < 1e-7 {
+		return steeringForce
+	} else {
+		return steeringForce.Normalize().MulScalar(e.MaxSpeed)
+	}
 
-	return steeringForce
 }
