@@ -47,6 +47,7 @@ func (w *World) Run() {
 
 func (w *World) AddEntity(e *Entity) {
 	w.entities = append(w.entities, e)
+	e.world = w
 }
 
 func (w *World) AllEntities() []*Entity {

@@ -12,7 +12,7 @@ func runWorld() *sf.World {
 
 	entity := sf.NewEntity()
 	entity.SetPos(sf.Vector2D{250, 250})
-	entity.SetTarget(sf.Vector2D{500, 500})
+	// entity.SetTarget(sf.Vector2D{500, 500})
 	world.AddEntity(entity)
 	return world
 }
