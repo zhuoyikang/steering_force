@@ -150,6 +150,7 @@ func (e *Entity) ObstacleAvoidance() Vector2D {
 	var closestIntersectingObstacle *Entity
 	distToClosestIP := math.MaxFloat64
 	var localPosOfClosestObstacle Vector2D
+	steeringForce := Vector2D{0, 0}
 
 	for _, e2 := range e.world.AllEntities() {
 		rlen := e2.boundingRadius + MINDETECTIONBOXLENGTH
@@ -183,29 +184,25 @@ func (e *Entity) ObstacleAvoidance() Vector2D {
 			closestIntersectingObstacle = e2
 			localPosOfClosestObstacle = localPos
 		}
+
+		multiplier := 3.0 + (e.dDBoxLength-localPosOfClosestObstacle.X)/e.dDBoxLength
+
+		steeringForce.Y = (closestIntersectingObstacle.boundingRadius -
+			localPosOfClosestObstacle.Y) * multiplier
+
+		brakingWeight := 0.0
+
+		steeringForce.X = (closestIntersectingObstacle.boundingRadius -
+			localPosOfClosestObstacle.X) *
+			brakingWeight
+
+		fmt.Printf("obforce2 %v\n", steeringForce)
+
+		s1 := VectorToWorldSpace(steeringForce, e.heading, e.side, e.pos)
+		steeringForce = steeringForce.Add(s1)
 	}
 
 	fmt.Printf("obforce1 \n")
 
-	steeringForce := Vector2D{0, 0}
-	if closestIntersectingObstacle == nil {
-		return steeringForce
-	}
-
-	multiplier := 3.0 + (e.dDBoxLength-localPosOfClosestObstacle.X)/e.dDBoxLength
-
-	steeringForce.Y = (closestIntersectingObstacle.boundingRadius -
-		localPosOfClosestObstacle.Y) * multiplier
-
-	brakingWeight := 1.0
-
-	steeringForce.X = (closestIntersectingObstacle.boundingRadius -
-		localPosOfClosestObstacle.X) *
-		brakingWeight
-
-	fmt.Printf("obforce2 %v\n", steeringForce)
-
-	return VectorToWorldSpace(steeringForce,
-		e.heading,
-		e.side, e.pos)
+	return steeringForce
 }
