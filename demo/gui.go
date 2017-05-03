@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	gmath "math"
 	"os"
 	"time"
 
@@ -208,10 +209,30 @@ func rec(p sf.Vector2D, r float64) math.Rect {
 	}
 }
 
+func CalcSlots(center sf.Vector2D, n int, r float64) (ret []sf.Vector2D) {
+	step := (360 / float64(n)) * (float64(gmath.Pi) / 180)
+	angle := float64(0)
+	ret = make([]sf.Vector2D, n)
+	for idx := 0; idx < n; idx++ {
+		angle += step
+		ret[idx] = sf.Vector2D{
+			X: center.X + gmath.Cos(angle)*r,
+			Y: center.Y + gmath.Sin(angle)*r,
+		}
+	}
+	return
+}
+
 func (w *Gui) DrawEntity(e *sf.Entity, canvas gxui.Canvas) {
 	//fmt.Printf("DrawEntity %v\n", e.GetPos())
 	canvas.DrawRoundedRect(rec(e.GetPos(), e.GetBoundingRadius()), 50, 50, 50, 50,
 		gxui.TransparentPen, b4)
+
+	// list := CalcSlots(e.GetPos(), 4, 50)
+	// for _, e := range list {
+	// 	canvas.DrawRoundedRect(rec(e, 10), 50, 50, 50, 50,
+	// 		gxui.TransparentPen, b4)
+	// }
 
 	if e.IsTargetOn() {
 		canvas.DrawRoundedRect(rec(e.GetTarget(), e.GetBoundingRadius()), 50, 50, 50, 50,
